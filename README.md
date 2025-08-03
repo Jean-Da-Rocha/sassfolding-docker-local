@@ -18,7 +18,7 @@
 > - **Ubuntu 24.2**
 > - **Sequoia 15.5**
 > 
-> It is not **production-ready** yet.
+> It is for **local development only** and is not meant to be used in **production**.
 > Also, it only supports **macOS** and **Linux** based operating systems.
 
 This project provides a standardized and streamlined Docker-based development environment tailored for Laravel +
@@ -56,6 +56,9 @@ challenges, which are discussed in the [advanced topics](#advanced-topics) secti
 | **Traefik**  | Dynamic reverse proxy with built-in TLS and dashboard support                |
 
 ## Usage
+
+In order to use this docker setup locally, you need to download or clone this repository, and put the files in the
+[Sassfolding](https://github.com/Jean-Da-Rocha/sassfolding) scaffold.
 
 The whole docker project is based on
 the [COMPOSE_PROJECT_NAME](https://docs.docker.com/compose/how-tos/environment-variables/envvars/#compose_project_name)
