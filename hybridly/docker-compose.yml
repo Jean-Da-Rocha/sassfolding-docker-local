@@ -11,8 +11,8 @@ services:
         UID: ${UID}
         USER_NAME: ${USER_NAME}
         XDEBUG_VERSION: ${XDEBUG_VERSION}
-      context: ../..
-      dockerfile: docker/hybridly/Dockerfile
+      context: ${DOCKER_DIRECTORY}
+      dockerfile: ${DOCKER_DIRECTORY}/hybridly/Dockerfile
     container_name: ${COMPOSE_PROJECT_NAME}-hybridly
     environment:
       COREPACK_ENABLE_DOWNLOAD_PROMPT: ${COREPACK_ENABLE_DOWNLOAD_PROMPT:-0}
@@ -29,4 +29,5 @@ services:
     ports:
       - '${VITE_PORT}:${VITE_PORT}'
     volumes:
-      - ../..:/var/www/html
+      - ${PROJECT_DIRECTORY}:/var/www/html
+      - ${DOCKER_DIRECTORY}/traefik/certs:/certs:ro

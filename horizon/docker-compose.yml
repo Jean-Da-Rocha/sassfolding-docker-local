@@ -11,4 +11,4 @@ services:
       - laravel
     stop_signal: SIGTERM
     volumes:
-      - ../..:/var/www/html
+      - ${PROJECT_DIRECTORY}:/var/www/html:cached

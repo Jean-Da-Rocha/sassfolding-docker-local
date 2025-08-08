@@ -24,5 +24,5 @@ services:
     networks:
       - laravel
     volumes:
-      - ./templates/hybridly.conf.template:/etc/nginx/templates/hybridly.conf.template:ro
-      - ../..:/var/www/html:ro
+      - ${DOCKER_DIRECTORY}/nginx/templates/hybridly.conf.template:/etc/nginx/templates/hybridly.conf.template:ro
+      - ${PROJECT_DIRECTORY}:/var/www/html:ro #TODO: remove?

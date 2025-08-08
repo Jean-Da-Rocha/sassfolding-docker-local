@@ -25,5 +25,5 @@ services:
       - "${NGINX_SSL_FORWARD_PORT}:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./config/traefik.yml:/etc/traefik/traefik.yml:ro
-      - ./certs:/etc/traefik/certs:ro
+      - ${DOCKER_DIRECTORY}/traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ${DOCKER_DIRECTORY}/traefik/certs:/etc/traefik/certs:ro
