@@ -21,7 +21,7 @@
 > It is for **local development only** and is not meant to be used in **production**.
 > Also, it only supports **macOS** and **Linux** based operating systems.
 
-This project provides a standardized and streamlined Docker-based development environment tailored for Laravel +
+This project provides a standardized and modular Docker-based development environment tailored for Laravel +
 Hybridly applications. It includes SSL support for local .test domains, isolated container and volume naming per
 project, and a wide array of pre-configured services to boost development productivity out of the box.
 
@@ -33,7 +33,7 @@ challenges, which are discussed in the [advanced topics](#advanced-topics) secti
 
 ## Features
 
-- ⚙️ Fully configurable via .env (versions, ports, project name, etc.)
+- ⚙️ Fully configurable via Makefile variables (versions, ports, project name, etc.)
 - 📦 Unique container, volume, and network names per project (COMPOSE_PROJECT_NAME)
 - 🌐 Local domain support without modifying /etc/hosts, thanks to DNSMasq and Traefik
 - 🔒 Built-in SSL certificates for .test domains
@@ -57,16 +57,23 @@ challenges, which are discussed in the [advanced topics](#advanced-topics) secti
 
 ## Usage
 
-In order to use this docker setup locally, you need to download or clone this repository, and put the files in the
-[Sassfolding](https://github.com/Jean-Da-Rocha/sassfolding) scaffold.
+This setup is supposed to be paired with the [Sassfolding](https://github.com/Jean-Da-Rocha/sassfolding) scaffold.
 
-The whole docker project is based on
-the [COMPOSE_PROJECT_NAME](https://docs.docker.com/compose/how-tos/environment-variables/envvars/#compose_project_name)
+After cloning or downloading this repository, export the **DOCKER_DIRECTORY** variable in your **.bashrc**, **.zshrc**,
+or any shell configuration file you use so that the Sassfolding project can easily point to the Docker setup
+
+For example, in a **.zshrc** file:
+
+```shell
+export DOCKER_DIRECTORY="$HOME/sassfolding-docker-local"
+```
+
+The whole docker project is based on the
+[COMPOSE_PROJECT_NAME](https://docs.docker.com/compose/how-tos/environment-variables/envvars/#compose_project_name)
 variable, which is understood by Docker.
 
-Basically, when you first pull the project and run the ```make install``` command, the script will use the slugified
-version of your working directory. For example, when you pull this project, your containers, networks, volumes and URL
-will be based on the **sassfolding** working directory:
+When you first pull the Sassfolding project and run the ```make install``` command, the script will use the
+slugified version of your working directory. For example, with a working directory named **sassfolding**:
 
 - Container names: sassfolding-redis, sassfolding-hybridly, sassfolding-traefik, etc.
 - Network name: project.sassfolding
@@ -78,14 +85,33 @@ will be based on the **sassfolding** working directory:
 > variable at the top of the Makefile. Its slugified version will take priority and be used as the
 > **COMPOSE_PROJECT_NAME** throughout the project.
 
-If you want to experiment with versions, ports, or other configurations, feel free to edit the corresponding values
-in the **.env** file.
+To experiment with versions, ports, or other configurations, override these values at the top of your Makefile (in the
+Sassfolding project). For example, to use PHP 8.3 instead of the default 8.4, your Makefile would look like:
+
+```makefile
+# Empty by default. Set a value if you don't want to use the working directory as project name.
+OVERRIDE_PROJECT_NAME ?=
+
+# The DOCKER_DIRECTORY variable is inherited from .bashrc, .zshrc, etc.
+DOCKER_DIRECTORY ?=
+PROJECT_DIRECTORY := $(CURDIR)
+
+export DOCKER_DIRECTORY
+export PROJECT_DIRECTORY
+export OVERRIDE_PROJECT_NAME
+
+# Variables to override
+
+PHP_VERSION := 8.3
+
+include $(DOCKER_DIRECTORY)/make/main.mk
+```
+
+> [!NOTE]
+> You can refer to the **make/infra.mk** file in this project to see the default versions and ports. 
 
 > [!TIP]
-> Don't forget to run the ```make rebuild``` command to reflect your changes.
-
-> [!CAUTION]
-> COMPOSE_PROJECT_NAME= and HORIZON_PATH= are not supposed to be edited and should stay empty
+> Run the ```make rebuild``` command to reflect your changes.
 
 ## Advanced topics
 
@@ -95,9 +121,10 @@ DNS server: **DNSMasq**. This setup allows requests for any subdomain under **.t
 
 ### How it works
 
-- The dnsmasq container listens on **53/udp** and **53/tcp** and handles requests to domains like ***.sassfolding.test**.
+- The dnsmasq container listens on **53/udp** and **53/tcp** (port 5353 for Linux) and handles requests to domains like
+***.sassfolding.test**
 - It is configured to resolve any **.test** domains to your localhost (127.0.0.1)
-- For all other domains, it forwards requests to upstream resolvers like **8.8.8.8** and **1.1.1.1**.
+- For all other domains, it forwards requests to upstream resolvers like **8.8.8.8** and **1.1.1.1**
 
 Here is the dnsmasq.conf used for the project:
 
@@ -116,8 +143,8 @@ server=1.0.0.1
 
 To make your system aware of this custom DNS routing, the project provides two **Makefile** targets:
 
-- **make setup-dns** - Adds a custom resolver configuration pointing **.test** to the **dnsmasq** container.
-- **make restore-dns** - Removes this custom DNS configuration and restores your system’s default settings.
+- **make setup-dns** - Adds a custom resolver configuration pointing **.test** to the **dnsmasq** container
+- **make restore-dns** - Removes this custom DNS configuration and restores your system’s default settings
 
 The behavior of these commands depends on your operating system and is determined by the **DNSMASQ_FORWARD_PORT**
 variable, which specifies the DNS port to be used and is read by Docker within the **dnsmasq** container.
@@ -130,10 +157,10 @@ variable, which specifies the DNS port to be used and is read by Docker within t
 
 #### On Linux:
 
-- Creates a file at **/etc/systemd/resolved.conf.d/test.conf**.
+- Creates a file at **/etc/systemd/resolved.conf.d/test.conf**
 - Instructs **systemd-resolved** to forward **.test** queries to the container, using port **5353** by default, which
-  avoids conflicts with the system's primary port **53**.
-- Restarts the **systemd-resolved** service to apply changes.
+  avoids conflicts with the system's primary port **53**
+- Restarts the **systemd-resolved** service to apply changes
 
 > [!IMPORTANT]
 > **systemd-resolved** must be active. If it's not running, the script will warn you to start it manually.
@@ -142,18 +169,18 @@ variable, which specifies the DNS port to be used and is read by Docker within t
 
 Manually editing **/etc/hosts** is tedious and static. This approach:
 
-- Allows dynamic per-project domain routing.
-- Avoids cluttering or conflicting with global system config.
-- Enables isolated and portable development environments.
+- Allows dynamic per-project domain routing
+- Avoids cluttering or conflicting with global system config
+- Enables isolated and portable development environments
 
 ## Known Issues
 
 While the setup is functional and stable for development, several technical caveats remain:
 
-- **Non-optimized build size**: Some containers could be optimized in terms of size and how volumes are handled.
+- **Non-optimized build size**: Some containers could be optimized in terms of size and how volumes are handled
 - **PHP and Node in the same container**: because Hybridly executes Artisan commands via Vite using the
   [**vite-plugin-run**](https://hybridly.dev/configuration/vite#run), PHP and Node must coexist in the same container.
-  This design violates the separation of concerns.
+  This design violates the separation of concerns
 
 ## Acknowledgment
 
