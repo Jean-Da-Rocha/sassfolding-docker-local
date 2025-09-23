@@ -3,5 +3,7 @@
 out
 gen
 
-traefik/certs
-hybridly/ssl
+traefik/certs/*.cert
+traefik/certs/*.crt
+traefik/certs/*.key
+hybridly/ssl/*.pem
