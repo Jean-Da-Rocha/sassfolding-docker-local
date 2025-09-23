@@ -24,7 +24,7 @@ taze-write: ## Write minor version updates to package.json and install them.
 
 .PHONY: volt-add
 volt-add: ## Install VoltUI component using the 'make volt-add component=InputText' syntax.
-	$(HYBRIDLY_EXEC) pnpx volt-vue add $(component) --outdir "./resources/modules/shared/components" --no-deps
+	$(HYBRIDLY_EXEC) pnpx volt-vue add $(component) --outdir "./modules/Core/Components" --no-deps
 
 .PHONY: vue-tsc
 vue-tsc: ## Rune TypeScript type checking for {.ts,.vue} files
