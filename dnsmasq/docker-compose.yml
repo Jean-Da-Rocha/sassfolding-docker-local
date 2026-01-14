@@ -16,8 +16,3 @@ services:
       - "${DNSMASQ_FORWARD_PORT}:53/tcp"
     volumes:
       - ./config/dnsmasq.conf:/etc/dnsmasq.conf:ro
-
-networks:
-  laravel:
-    external: true
-    name: project.${COMPOSE_PROJECT_NAME}

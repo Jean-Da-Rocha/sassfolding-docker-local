@@ -27,8 +27,3 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ${DOCKER_DIRECTORY}/traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro
       - ${DOCKER_DIRECTORY}/traefik/certs:/etc/traefik/certs:ro
-
-networks:
-  laravel:
-    name: project.${COMPOSE_PROJECT_NAME}
-    driver: bridge

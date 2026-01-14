@@ -17,8 +17,3 @@ services:
 volumes:
   redis-data:
     name: ${COMPOSE_PROJECT_NAME}-redis-data
-
-networks:
-  laravel:
-    external: true
-    name: project.${COMPOSE_PROJECT_NAME}

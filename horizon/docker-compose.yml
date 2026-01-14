@@ -12,8 +12,3 @@ services:
     stop_signal: SIGTERM
     volumes:
       - ${PROJECT_DIRECTORY}:/var/www/html:cached
-
-networks:
-  laravel:
-    external: true
-    name: project.${COMPOSE_PROJECT_NAME}
