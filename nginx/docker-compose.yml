@@ -26,3 +26,8 @@ services:
     volumes:
       - ${DOCKER_DIRECTORY}/nginx/templates/hybridly.conf.template:/etc/nginx/templates/hybridly.conf.template:ro
       - ${PROJECT_DIRECTORY}:/var/www/html:ro
+
+networks:
+  laravel:
+    external: true
+    name: project.${COMPOSE_PROJECT_NAME}

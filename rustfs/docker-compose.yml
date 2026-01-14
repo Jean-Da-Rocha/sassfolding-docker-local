@@ -37,9 +37,14 @@ services:
         condition: service_healthy
     command: >
       /bin/sh -c "
+      set -e;
+      echo '[rustfs-init] Configuring mc alias...';
       mc alias set rustfs http://rustfs:9000 $${AWS_ACCESS_KEY_ID} $${AWS_SECRET_ACCESS_KEY};
+      echo '[rustfs-init] Creating bucket: $${AWS_BUCKET}';
       mc mb --ignore-existing rustfs/$${AWS_BUCKET};
+      echo '[rustfs-init] Setting public download access...';
       mc anonymous set download rustfs/$${AWS_BUCKET};
+      echo '[rustfs-init] Bucket setup completed successfully';
       "
     entrypoint: [""]
     environment:
@@ -54,3 +59,8 @@ services:
 volumes:
   rustfs-data:
     name: ${COMPOSE_PROJECT_NAME}-rustfs-data
+
+networks:
+  laravel:
+    external: true
+    name: project.${COMPOSE_PROJECT_NAME}

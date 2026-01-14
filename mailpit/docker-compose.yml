@@ -16,3 +16,8 @@ services:
 volumes:
   mail-data:
     name: ${COMPOSE_PROJECT_NAME}-mail-data
+
+networks:
+  laravel:
+    external: true
+    name: project.${COMPOSE_PROJECT_NAME}

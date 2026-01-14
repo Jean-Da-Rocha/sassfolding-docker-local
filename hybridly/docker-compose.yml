@@ -31,3 +31,8 @@ services:
     volumes:
       - ${PROJECT_DIRECTORY}:/var/www/html
       - ${DOCKER_DIRECTORY}/traefik/certs:/certs:ro
+
+networks:
+  laravel:
+    external: true
+    name: project.${COMPOSE_PROJECT_NAME}
