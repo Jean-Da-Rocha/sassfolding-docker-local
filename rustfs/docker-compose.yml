@@ -1,0 +1,61 @@
+services:
+  rustfs:
+    container_name: ${COMPOSE_PROJECT_NAME}-rustfs
+    environment:
+      RUSTFS_ACCESS_KEY: ${AWS_ACCESS_KEY_ID}
+      RUSTFS_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY}
+    healthcheck:
+      retries: 3
+      start_period: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      timeout: 3s
+    image: rustfs/rustfs:${RUSTFS_VERSION}
+    labels:
+      - "traefik.enable=true"
+      # RustFS Api / Storage
+      - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.entrypoints=https"
+      - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.rule=Host(`storage.${COMPOSE_PROJECT_NAME}.test`)"
+      - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.service=storage-${COMPOSE_PROJECT_NAME}"
+      - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.tls=true"
+      - "traefik.http.services.storage-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=9000"
+      # RustFS Console / Dashboard
+      - "traefik.http.routers.rustfs-${COMPOSE_PROJECT_NAME}.entrypoints=https"
+      - "traefik.http.routers.rustfs-${COMPOSE_PROJECT_NAME}.rule=Host(`rustfs.${COMPOSE_PROJECT_NAME}.test`)"
+      - "traefik.http.routers.rustfs-${COMPOSE_PROJECT_NAME}.service=rustfs-${COMPOSE_PROJECT_NAME}"
+      - "traefik.http.routers.rustfs-${COMPOSE_PROJECT_NAME}.tls=true"
+      - "traefik.http.services.rustfs-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=9001"
+    networks:
+      - laravel
+    user: "10001:10001"
+    volumes:
+      - rustfs-data:/data
+
+  rustfs-init:
+    container_name: ${COMPOSE_PROJECT_NAME}-rustfs-init
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    command: >
+      /bin/sh -c "
+      set -e;
+      echo '[rustfs-init] Configuring mc alias...';
+      mc alias set rustfs http://rustfs:9000 $${AWS_ACCESS_KEY_ID} $${AWS_SECRET_ACCESS_KEY};
+      echo '[rustfs-init] Creating bucket: $${AWS_BUCKET}';
+      mc mb --ignore-existing rustfs/$${AWS_BUCKET};
+      echo '[rustfs-init] Setting public download access...';
+      mc anonymous set download rustfs/$${AWS_BUCKET};
+      echo '[rustfs-init] Bucket setup completed successfully';
+      "
+    entrypoint: [""]
+    environment:
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_BUCKET: ${AWS_BUCKET}
+    image: cgr.dev/chainguard/minio-client:${MINIO_CLIENT_VERSION}
+    networks:
+      - laravel
+    restart: "no"
+
+volumes:
+  rustfs-data:
+    name: ${COMPOSE_PROJECT_NAME}-rustfs-data

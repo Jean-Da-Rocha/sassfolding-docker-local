@@ -38,7 +38,7 @@ challenges, which are discussed in the [advanced topics](#advanced-topics) secti
 - 🌐 Local domain support without modifying /etc/hosts, thanks to DNSMasq and Traefik
 - 🔒 Built-in SSL certificates for .test domains
 - 🚀 First-class support for Hybridly and Laravel Horizon
-- 📬 Mail and object storage (Mailpit, MinIO) included
+- 📬 Mail and object storage (Mailpit, RustFS) included
 - 🛠️ Graceful integration with modern development workflows
 
 ## Architecture
@@ -49,7 +49,7 @@ challenges, which are discussed in the [advanced topics](#advanced-topics) secti
 | **Hybridly** | Main app container running both PHP and Node.js                              |
 | **Horizon**  | Supervisor for managing Laravel queues with Redis                            |
 | **Mailpit**  | Local SMTP server and email inbox for testing emails                         |
-| **MinIO**    | S3-compatible object storage (for local file upload testing)                 |
+| **RustFS**   | S3-compatible object storage (for local file upload testing)                 |
 | **MySQL**    | Relational database used by Laravel for both local and testing               |
 | **Nginx**    | Serves PHP requests via FastCGI since Traefik does not support it            |
 | **Redis**    | Used for queues, cache, and sessions                                         |
@@ -171,6 +171,43 @@ Manually editing **/etc/hosts** is tedious and static. This approach:
 - Allows dynamic per-project domain routing
 - Avoids cluttering or conflicting with global system config
 - Enables isolated and portable development environments
+
+### RustFS Object Storage
+
+[RustFS](https://github.com/rustfs/rustfs) is a high-performance, S3-compatible object storage system written in Rust.
+It serves as a drop-in replacement for MinIO, providing local file upload testing capabilities for Laravel applications.
+
+#### Exposed URLs
+
+| URL                                    | Purpose                          |
+|----------------------------------------|----------------------------------|
+| **storage.{COMPOSE_PROJECT_NAME}.test** | S3 API endpoint for file access  |
+| **rustfs.{COMPOSE_PROJECT_NAME}.test**  | Web console for bucket management |
+
+#### Automatic Bucket Creation
+
+RustFS does not natively support automatic bucket creation via environment variables. To work around this limitation,
+the stack uses an **init container pattern** with the `rustfs-init` service:
+
+1. The `rustfs` container starts and exposes the S3 API on port 9000
+2. Once the healthcheck passes, `rustfs-init` starts
+3. The init container uses the [Chainguard MinIO Client (mc)](https://images.chainguard.dev/directory/image/minio-client/overview)
+   to create the bucket defined by `${AWS_BUCKET}` and sets public read access
+4. After completing its tasks, `rustfs-init` exits automatically and does not consume resources
+
+#### Accessing Files
+
+Files stored in buckets with public read access can be accessed directly via:
+
+```
+https://storage.{COMPOSE_PROJECT_NAME}.test/{bucket}/{filename}
+```
+
+For example, with a project named **sassfolding** and a bucket named **media**:
+
+```
+https://storage.sassfolding.test/media/dummy.txt
+```
 
 ## Known Issues
 

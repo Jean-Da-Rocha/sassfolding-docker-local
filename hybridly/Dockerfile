@@ -50,6 +50,4 @@ RUN mkdir -p /var/log/supervisor && chown laravel:laravel /var/log/supervisor
 
 USER $USER_NAME
 
-#COPY --chown=$USER_NAME:$GROUP_NAME ../.. /var/www/html
-
 CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
