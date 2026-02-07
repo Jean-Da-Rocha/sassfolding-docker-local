@@ -20,10 +20,6 @@ taze-write: ## Write dependency updates to package.json and install. Use 'make t
 	$(HYBRIDLY_EXEC) pnpx taze $(if $(major),major) -w
 	@$(MAKE) pnpm cmd="install"
 
-.PHONY: volt-add
-volt-add: ## Install VoltUI component using the 'make volt-add component=InputText' syntax.
-	$(HYBRIDLY_EXEC) pnpx volt-vue add $(component) --outdir "./modules/Core/Components" --no-deps
-
 .PHONY: vue-tsc
 vue-tsc: ## Run TypeScript type checking for {.ts,.vue} files.
 	$(HYBRIDLY_EXEC) pnpm run vue-tsc
