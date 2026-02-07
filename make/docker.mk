@@ -1,17 +1,26 @@
+##@ Docker Lifecycle
+
 .PHONY: build
 build: ## Build the docker images for the project, optionally without cache using 'make build keep-cache=0' syntax.
 	$(DOCKER_COMPOSE) build $(if $(filter 0, $(keep-cache)), --no-cache)
 
 .PHONY: destroy
-destroy: ## Tear down the project, removing volumes and pruning Docker system.
-	$(DOCKER) system prune --all --force --volumes
+destroy: ## Tear down this project: stop containers, remove volumes and images.
+	$(DOCKER_COMPOSE) down --volumes --rmi all --remove-orphans
+
+.PHONY: logs
+logs: ## Tail logs from all containers, or a specific one using 'make logs svc=hybridly' syntax.
+	$(DOCKER_COMPOSE) logs -f $(svc)
+
+.PHONY: ps
+ps: ## Show status of all containers.
+	$(DOCKER_COMPOSE) ps
 
 .PHONY: purge
-purge: ## Purge all Docker containers, images, networks, and volumes.
-	@$(MAKE) stop keep-volumes=0
-	$(DOCKER) network prune --force
-	$(DOCKER) volume prune --force
-	$(DOCKER) image prune --force
+purge: ## Prune ALL unused Docker resources system-wide (containers, images, volumes, networks).
+	@echo "$(RED)[WARNING]: This will remove ALL unused Docker resources on your machine, not just this project.$(RESET)"
+	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+	$(DOCKER) system prune --all --force --volumes
 
 .PHONY: rebuild
 rebuild: ## Rebuild and restart docker containers for this project, optionally removing volumes and not using cache using 'make rebuild keep-cache=0 keep-volumes=0' syntax.
@@ -25,6 +34,10 @@ rebuild: ## Rebuild and restart docker containers for this project, optionally r
 restart: ## Restart the project by stopping and starting all containers.
 	@$(MAKE) stop
 	@$(MAKE) start
+
+.PHONY: shell
+shell: ## Open a bash shell in the hybridly container.
+	$(HYBRIDLY_EXEC) bash
 
 .PHONY: start
 start: ## Start the Docker containers for the project.

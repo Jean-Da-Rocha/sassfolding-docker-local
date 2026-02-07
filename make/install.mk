@@ -1,3 +1,5 @@
+##@ Installation & DNS
+
 .PHONY: install
 install: ## Install dependencies and set up the local and testing environments.
 	@$(MAKE) restore-dns

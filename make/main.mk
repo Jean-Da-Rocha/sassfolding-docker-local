@@ -36,9 +36,12 @@ include $(MAKE_DIRECTORY)/frontend.mk
 include $(MAKE_DIRECTORY)/infra.mk
 include $(MAKE_DIRECTORY)/install.mk
 
+.DEFAULT_GOAL := help
+
 .PHONY: help
-help:
+help: ## Show this help message.
 	@echo 'Available make commands:'
-	@grep -Eh '^[a-zA-Z_0-9%-]+:.*?## .*$$' Makefile $(MAKE_DIRECTORY)/*.mk | \
-	awk 'BEGIN {FS = ":.*?## "}; {printf "    - ${CYAN}%-25s${RESET}: %s\n", $$1, $$2}'
-	@echo
+	@echo ''
+	@grep -Eh '^[a-zA-Z_0-9%-]+:.*?## .*$$|^##@' Makefile $(MAKE_DIRECTORY)/*.mk | \
+	awk 'BEGIN {FS = ":.*?## "}; /^##@/ {printf "\n  $(YELLOW)%s$(RESET)\n", substr($$0, 5); next} {printf "    $(CYAN)%-25s$(RESET) %s\n", $$1, $$2}'
+	@echo ''
