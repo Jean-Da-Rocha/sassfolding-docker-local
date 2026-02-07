@@ -1,3 +1,5 @@
+##@ SSL Certificates
+
 update-certificates: ## Generate and update SSL certificates for the project.
 	@echo "$(CYAN)[INFO]: Adding Certificate Authority to trust stores...$(RESET)"
 	@if [ -f "$$(mkcert -CAROOT)/rootCA.pem" ]; then \
