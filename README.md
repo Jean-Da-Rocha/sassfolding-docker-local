@@ -35,7 +35,7 @@ project, and a wide array of pre-configured services to boost development produc
 - Configurable TLD for local domains (default: `.test`, customizable via `DNS_DOMAIN`)
 - Built-in SSL certificates via mkcert
 - FrankenPHP + Laravel Octane for high-performance PHP serving
-- Multi-stage Dockerfile (dev and prod targets)
+- Multi-stage Dockerfile (dev target ready, prod target scaffolded)
 - Mail and object storage (Mailpit, RustFS) included
 
 ## Architecture
@@ -247,7 +247,8 @@ The hybridly container uses [FrankenPHP](https://frankenphp.dev/) as the PHP app
 - **No FastCGI**: FrankenPHP serves PHP directly (built on Caddy)
 - **Persistent workers**: Octane keeps the application in memory for faster response times
 - **File watching**: The `--watch` flag in development restarts workers on PHP file changes
-- **Production-ready**: The Dockerfile includes a `prod` stage with no dev tools
+- **Production-aware**: The Dockerfile includes a `prod` stage skeleton (no dev tools), but it still needs `COPY`
+  instructions, asset building, and `composer install --no-dev` before it can be used in a real deployment
 
 ### Multi-stage Dockerfile
 
