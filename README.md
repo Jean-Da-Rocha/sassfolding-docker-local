@@ -208,6 +208,22 @@ The `make setup-dns` target configures your OS to forward queries for the config
 
 The `make restore-dns` target removes these configurations. Both targets require `sudo` (prompted once during setup).
 
+#### dnsmasq Design Choices
+
+The dnsmasq container is configured entirely through **inline CLI arguments** in `docker-compose.yml`, with no external
+config file. This approach was chosen over the traditional mounted `dnsmasq.conf` for several reasons:
+
+- **Dynamic TLD**: The `--address=/${DNS_DOMAIN}/127.0.0.1` flag uses Docker Compose variable substitution, so the TLD
+  is always in sync with `DNS_DOMAIN` — no config file to regenerate when changing TLD
+- **Entrypoint bypass**: The `dockurr/dnsmasq` image ships with a wrapper script; the setup overrides it with
+  `entrypoint: ["dnsmasq"]` to call the binary directly and keep full control over flags
+- **Container isolation**: `--no-resolv` prevents dnsmasq from reading the container's `/etc/resolv.conf`, and
+  `--no-hosts` prevents it from reading `/etc/hosts` — dnsmasq only resolves what it's told to via `--address`
+- **Docker-friendly logging**: `--log-facility=-` sends logs to stderr, making them visible via `docker logs` or
+  `make logs svc=dnsmasq`
+- **Direct healthcheck**: Uses `nslookup healthcheck.${DNS_DOMAIN} 127.0.0.1` to query dnsmasq directly, independent
+  of the host's DNS resolution
+
 ### Custom TLD
 
 The TLD is configurable via the `DNS_DOMAIN` variable in `make/infra.mk` (default: `test`). Override it in your

@@ -1,6 +1,3 @@
-# ==============================================================================
-# Stage: base — FrankenPHP + PHP extensions (shared by dev and prod)
-# ==============================================================================
 ARG PHP_VERSION=8.5
 
 FROM dunglas/frankenphp:php${PHP_VERSION} AS base
@@ -32,9 +29,6 @@ RUN groupadd -g $GID $GROUP_NAME \
 
 WORKDIR /var/www/html
 
-# ==============================================================================
-# Stage: dev — Xdebug, Node.js, pnpm, supervisor
-# ==============================================================================
 FROM base AS dev
 
 ARG NODE_VERSION
@@ -74,9 +68,6 @@ USER $USER_NAME
 
 CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf"]
 
-# ==============================================================================
-# Stage: prod — no Node, no Xdebug, no supervisor
-# ==============================================================================
 FROM base AS prod
 
 ARG USER_NAME
