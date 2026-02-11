@@ -3,10 +3,19 @@ services:
     cap_add:
       - NET_ADMIN
     container_name: ${COMPOSE_PROJECT_NAME}-dnsmasq
+    entrypoint: ["dnsmasq"]
+    command:
+      - --no-daemon
+      - --no-resolv
+      - --no-hosts
+      - --address=/${DNS_DOMAIN}/127.0.0.1
+      - --server=1.1.1.1
+      - --server=8.8.8.8
+      - --log-facility=-
     healthcheck:
       retries: 3
-      start_period: 10s
-      test: [ "CMD", "getent", "hosts", "app.${COMPOSE_PROJECT_NAME}.test" ]
+      start_period: 5s
+      test: ["CMD", "nslookup", "healthcheck.${DNS_DOMAIN}", "127.0.0.1"]
       timeout: 3s
     image: dockurr/dnsmasq:${DNSMASQ_VERSION}
     networks:
@@ -14,5 +23,3 @@ services:
     ports:
       - "${DNSMASQ_FORWARD_PORT}:53/udp"
       - "${DNSMASQ_FORWARD_PORT}:53/tcp"
-    volumes:
-      - ./config/dnsmasq.conf:/etc/dnsmasq.conf:ro

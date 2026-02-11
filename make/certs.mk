@@ -8,12 +8,12 @@ update-certificates: ## Generate and update SSL certificates for the project.
 		mkcert -install; \
 		echo "$(GREEN)[SUCCESS]: Certificate Authority added to trust stores.$(RESET)"; \
 	fi
-	@echo "$(CYAN)[INFO]: Updating SSL certificates for $(PROJECT_NAME_SLUG).test...$(RESET)"
+	@echo "$(CYAN)[INFO]: Updating SSL certificates for $(PROJECT_NAME_SLUG).$(DNS_DOMAIN)...$(RESET)"
 	@mkcert \
 		-cert-file $(DOCKER_DIRECTORY)/traefik/certs/$(PROJECT_NAME_SLUG).cert \
 		-key-file $(DOCKER_DIRECTORY)/traefik/certs/$(PROJECT_NAME_SLUG).key \
-		"*.$(PROJECT_NAME_SLUG).test" \
-		"$(PROJECT_NAME_SLUG).test" \
+		"*.$(PROJECT_NAME_SLUG).$(DNS_DOMAIN)" \
+		"$(PROJECT_NAME_SLUG).$(DNS_DOMAIN)" \
 		127.0.0.1 0.0.0.0 > /dev/null 2>&1
 	@echo "$(GREEN)[SUCCESS]: SSL certificates generated.$(RESET)"
 	@echo "$(CYAN)[INFO]: Copying mkcert root CA...$(RESET)"
