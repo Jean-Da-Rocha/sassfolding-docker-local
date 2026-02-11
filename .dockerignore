@@ -1,0 +1,20 @@
+# Version control
+.git
+.gitignore
+
+# IDE
+.idea/
+
+# Documentation
+README.md
+
+# Services not needed in build context
+dnsmasq/
+mailpit/
+mysql/
+redis/
+rustfs/
+scripts/
+
+# Make targets (used by host, not by Docker)
+make/

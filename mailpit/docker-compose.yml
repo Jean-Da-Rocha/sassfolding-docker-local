@@ -5,7 +5,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.mail-${COMPOSE_PROJECT_NAME}.entrypoints=https"
-      - "traefik.http.routers.mail-${COMPOSE_PROJECT_NAME}.rule=Host(`mail.${COMPOSE_PROJECT_NAME}.test`)"
+      - "traefik.http.routers.mail-${COMPOSE_PROJECT_NAME}.rule=Host(`mail.${COMPOSE_PROJECT_NAME}.${DNS_DOMAIN}`)"
       - "traefik.http.routers.mail-${COMPOSE_PROJECT_NAME}.tls=true"
       - "traefik.http.services.mail-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8025"
     networks:

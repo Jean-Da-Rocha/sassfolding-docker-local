@@ -22,7 +22,6 @@ endif
 
 DOCKER ?= @docker
 DOCKER_COMPOSE ?= $(DOCKER) compose
-HORIZON_EXEC ?= $(DOCKER_COMPOSE) exec -it horizon
 HYBRIDLY_EXEC ?= $(DOCKER_COMPOSE) exec -it hybridly
 HYBRIDLY_RUNNER ?= $(DOCKER_COMPOSE) run --rm --no-deps hybridly
 

@@ -16,9 +16,6 @@ composer: ## Run composer commands using the 'make composer cmd="..."' syntax.
 fresh: ## Drop all tables and re-run migrations. Use 'make fresh seed=1' to also seed.
 	$(HYBRIDLY_EXEC) php artisan migrate:fresh $(if $(seed),--seed)
 
-horizon-%: ## Manage Horizon: make horizon-pause, horizon-continue, horizon-start, horizon-terminate.
-	$(HORIZON_EXEC) php artisan horizon:$(*)
-
 .PHONY: migrate
 migrate: ## Run database migrations.
 	$(HYBRIDLY_EXEC) php artisan migrate

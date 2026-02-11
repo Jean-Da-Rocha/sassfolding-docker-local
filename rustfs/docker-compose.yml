@@ -14,13 +14,13 @@ services:
       - "traefik.enable=true"
       # RustFS Api / Storage
       - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.entrypoints=https"
-      - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.rule=Host(`storage.${COMPOSE_PROJECT_NAME}.test`)"
+      - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.rule=Host(`storage.${COMPOSE_PROJECT_NAME}.${DNS_DOMAIN}`)"
       - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.service=storage-${COMPOSE_PROJECT_NAME}"
       - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.tls=true"
       - "traefik.http.services.storage-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=9000"
       # RustFS Console / Dashboard
       - "traefik.http.routers.rustfs-${COMPOSE_PROJECT_NAME}.entrypoints=https"
-      - "traefik.http.routers.rustfs-${COMPOSE_PROJECT_NAME}.rule=Host(`rustfs.${COMPOSE_PROJECT_NAME}.test`)"
+      - "traefik.http.routers.rustfs-${COMPOSE_PROJECT_NAME}.rule=Host(`rustfs.${COMPOSE_PROJECT_NAME}.${DNS_DOMAIN}`)"
       - "traefik.http.routers.rustfs-${COMPOSE_PROJECT_NAME}.service=rustfs-${COMPOSE_PROJECT_NAME}"
       - "traefik.http.routers.rustfs-${COMPOSE_PROJECT_NAME}.tls=true"
       - "traefik.http.services.rustfs-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=9001"

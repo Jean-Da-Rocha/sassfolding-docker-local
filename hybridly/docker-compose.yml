@@ -13,6 +13,7 @@ services:
         XDEBUG_VERSION: ${XDEBUG_VERSION}
       context: ${DOCKER_DIRECTORY}
       dockerfile: ${DOCKER_DIRECTORY}/hybridly/Dockerfile
+      target: dev
     container_name: ${COMPOSE_PROJECT_NAME}-hybridly
     environment:
       COREPACK_ENABLE_DOWNLOAD_PROMPT: ${COREPACK_ENABLE_DOWNLOAD_PROMPT:-0}
@@ -21,9 +22,15 @@ services:
       - host.docker.internal:host-gateway
     healthcheck:
       retries: 3
-      start_period: 10s
-      test: ["CMD", "bash", "-c", "php --version && composer --version && pnpm --version"]
+      start_period: 15s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
       timeout: 5s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app-${COMPOSE_PROJECT_NAME}.entrypoints=https"
+      - "traefik.http.routers.app-${COMPOSE_PROJECT_NAME}.rule=Host(`app.${COMPOSE_PROJECT_NAME}.${DNS_DOMAIN}`)"
+      - "traefik.http.routers.app-${COMPOSE_PROJECT_NAME}.tls=true"
+      - "traefik.http.services.app-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8000"
     networks:
       - laravel
     ports:
