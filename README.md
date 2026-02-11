@@ -8,8 +8,7 @@
 - [Usage](#usage)
 - [Make Commands](#make-commands)
 - [Advanced Topics](#advanced-topics)
-- [Known Issues](#known-issues)
-- [Acknowledgment](#acknowledgment)
+
 
 ## Introduction
 
@@ -18,43 +17,45 @@
 > - **ZorinOS 17**
 > - **Ubuntu 24.2**
 > - **Sequoia 15.5**
-> 
+>
 > It is for **local development only** and is not meant to be used in **production**.
 > Also, it only supports **macOS** and **Linux** based operating systems.
 
 This project provides a standardized and modular Docker-based development environment tailored for Laravel +
-Hybridly applications. It includes SSL support for local .test domains, isolated container and volume naming per
+Hybridly applications. It includes SSL support for local domains, isolated container and volume naming per
 project, and a wide array of pre-configured services to boost development productivity out of the box.
 
 > [!NOTE]
 > This setup is not compatible with Laravel Sail as it follows a fundamentally different philosophy and architecture
 
-This stack was built from scratch by someone with no prior Docker experience. The process surfaced several technical
-challenges, which are discussed in the [advanced topics](#advanced-topics) section.
-
 ## Features
 
-- ⚙️ Fully configurable via Makefile variables (versions, ports, project name, etc.)
-- 📦 Unique container, volume, and network names per project (COMPOSE_PROJECT_NAME)
-- 🌐 Local domain support without modifying /etc/hosts, thanks to DNSMasq and Traefik
-- 🔒 Built-in SSL certificates for .test domains
-- 🚀 First-class support for Hybridly and Laravel Horizon
-- 📬 Mail and object storage (Mailpit, RustFS) included
-- 🛠️ Graceful integration with modern development workflows
+- Fully configurable via Makefile variables (versions, ports, project name, TLD, etc.)
+- Unique container, volume, and network names per project (COMPOSE_PROJECT_NAME)
+- Configurable TLD for local domains (default: `.test`, customizable via `DNS_DOMAIN`)
+- Built-in SSL certificates via mkcert
+- FrankenPHP + Laravel Octane for high-performance PHP serving
+- Multi-stage Dockerfile (dev and prod targets)
+- Mail and object storage (Mailpit, RustFS) included
 
 ## Architecture
 
-| Container    | Purpose                                                                      |
-|--------------|------------------------------------------------------------------------------|
-| **DNSMasq**  | Handles wildcard DNS resolution for **.test** domains without **/etc/hosts** |
-| **Hybridly** | Main app container running both PHP and Node.js                              |
-| **Horizon**  | Supervisor for managing Laravel queues with Redis                            |
-| **Mailpit**  | Local SMTP server and email inbox for testing emails                         |
-| **RustFS**   | S3-compatible object storage (for local file upload testing)                 |
-| **MySQL**    | Relational database used by Laravel for both local and testing               |
-| **Nginx**    | Serves PHP requests via FastCGI since Traefik does not support it            |
-| **Redis**    | Used for queues, cache, and sessions                                         |
-| **Traefik**  | Dynamic reverse proxy with built-in TLS and dashboard support                |
+| Container       | Purpose                                                     |
+|-----------------|-------------------------------------------------------------|
+| **dnsmasq**     | Lightweight DNS server for wildcard local domain resolution |
+| **Hybridly**    | FrankenPHP + Octane + Node.js (PHP server + Vite dev)       |
+| **Mailpit**     | Local SMTP server and email inbox for testing emails        |
+| **MySQL**       | Relational database for both local development and testing  |
+| **Redis**       | Used for queues, cache, and sessions                        |
+| **RustFS**      | S3-compatible object storage (for local file upload testing)|
+| **RustFS-init** | Init container for automatic bucket creation (exits after)  |
+| **Traefik**     | Dynamic reverse proxy with TLS termination and dashboard    |
+
+### Request Flow
+
+```
+Browser -> Traefik (TLS on :443) -> FrankenPHP/Octane (:8000) -> Laravel
+```
 
 ## Usage
 
@@ -79,7 +80,7 @@ slugified version of your working directory. For example, with a working directo
 - Container names: sassfolding-redis, sassfolding-hybridly, sassfolding-traefik, etc.
 - Network name: project.sassfolding
 - Volume names: sassfolding-redis-data, sassfolding-mail-data, etc.
-- URL: app.sassfolding.test, horizon.sassfolding.test, mail.sassfolding.test, etc.
+- URLs: app.sassfolding.test, mail.sassfolding.test, etc.
 
 > [!NOTE]
 > If you want to use a different name than the current working directory, you can set the **OVERRIDE_PROJECT_NAME**
@@ -87,7 +88,7 @@ slugified version of your working directory. For example, with a working directo
 > **COMPOSE_PROJECT_NAME** throughout the project.
 
 To experiment with versions, ports, or other configurations, override these values at the top of your Makefile (in the
-Sassfolding project). For example, to use PHP 8.3 instead of the default 8.4, your Makefile would look like:
+Sassfolding project). For example, to use a different PHP version or TLD:
 
 ```makefile
 # Empty by default. Set a value if you don't want to use the working directory as project name.
@@ -102,13 +103,14 @@ export PROJECT_DIRECTORY
 export OVERRIDE_PROJECT_NAME
 
 # Variables to override
-PHP_VERSION := 8.3
+PHP_VERSION := 8.4
+DNS_DOMAIN := test
 
 include $(DOCKER_DIRECTORY)/make/main.mk
 ```
 
 > [!NOTE]
-> You can refer to the **make/infra.mk** file in this project to see the default versions and ports. 
+> You can refer to the **make/infra.mk** file in this project to see the default versions and ports.
 
 > [!TIP]
 > Run the ```make rebuild``` command to reflect your changes.
@@ -152,10 +154,6 @@ own (defaults to help).
 | `make phpstan`                                 | Run PHPStan static analysis                        |
 | `make pint`                                    | Fix PHP coding style with Laravel Pint             |
 | `make composer cmd="..."`                      | Run any Composer command                           |
-| `make horizon-pause`                           | Pause the Horizon queue worker                     |
-| `make horizon-continue`                        | Resume a paused Horizon queue                      |
-| `make horizon-start`                           | Start Horizon                                      |
-| `make horizon-terminate`                       | Terminate Horizon                                  |
 
 #### Module-scoped seeders
 
@@ -178,15 +176,14 @@ make seed module=Users class=UserSeeder
 | `make taze major=1`            | Check for outdated major dependencies                        |
 | `make taze-write`              | Write minor updates to package.json and install              |
 | `make taze-write major=1`      | Write major updates to package.json and install              |
-| `make volt-add component=...`  | Install a VoltUI component                                   |
 
 ### Installation & DNS
 
 | Command              | Description                                               |
 |----------------------|-----------------------------------------------------------|
 | `make install`       | Full setup: DNS, env files, certs, build, deps, keys      |
-| `make setup-dns`     | Configure DNS resolver for .test domains                  |
-| `make restore-dns`   | Remove custom DNS configuration                           |
+| `make setup-dns`     | Configure OS DNS resolver for the project TLD             |
+| `make restore-dns`   | Remove OS DNS resolver configuration                      |
 
 ### Environment & Certificates
 
@@ -195,67 +192,56 @@ make seed module=Users class=UserSeeder
 | `make setup-local-environment`   | Generate .env from .env.example                       |
 | `make setup-testing-environment` | Generate .env.testing from .env.testing.example       |
 | `make configure-husky-hooks`     | Bind Husky hooks to the right Docker container        |
-| `make update-certificates`       | Generate SSL certificates for .test domains           |
+| `make update-certificates`       | Generate SSL certificates for project domains         |
 
 ## Advanced topics
 
-In order to use clean **.test** domains locally like **app.sassfolding.test**, the stack relies on a lightweight
-DNS server: **DNSMasq**. This setup allows requests for any subdomain under **.test** to be resolved to **localhost**
-(127.0.0.1), ensuring that the DNS queries are handled locally without manually editing your /etc/hosts file.
+### DNS Resolution
 
-### How it works
+The stack uses a **dnsmasq** container to provide wildcard DNS resolution for all `*.{project}.{tld}` domains. This
+means any subdomain (existing or future) automatically resolves to `127.0.0.1` without maintaining a list of entries.
 
-- The dnsmasq container listens on **53/udp** and **53/tcp** (port 5353 for Linux) and handles requests to domains like
-***.sassfolding.test**
-- It is configured to resolve any **.test** domains to your localhost (127.0.0.1)
-- For all other domains, it forwards requests to upstream resolvers like **8.8.8.8** and **1.1.1.1**
+The `make setup-dns` target configures your OS to forward queries for the configured TLD to the dnsmasq container:
 
-Here is the dnsmasq.conf used for the project:
+- **Linux**: Creates a systemd-resolved drop-in config at `/etc/systemd/resolved.conf.d/{tld}.conf`
+- **macOS**: Creates a resolver file at `/etc/resolver/{tld}`
 
-```apacheconf
-address=/test/127.0.0.1
+The `make restore-dns` target removes these configurations. Both targets require `sudo` (prompted once during setup).
 
-no-hosts
+### Custom TLD
 
-server=8.8.8.8
-server=8.8.4.4
-server=1.1.1.1
-server=1.0.0.1
+The TLD is configurable via the `DNS_DOMAIN` variable in `make/infra.mk` (default: `test`). Override it in your
+Makefile to use a different TLD:
+
+```makefile
+DNS_DOMAIN := localhost
 ```
 
-### DNS Integration on Host Machine
+This will generate URLs like `app.sassfolding.localhost`, certificates for `*.sassfolding.localhost`, etc.
 
-To make your system aware of this custom DNS routing, the project provides two **Makefile** targets:
+> [!TIP]
+> `.test` is an IETF-reserved TLD (RFC 6761) that will never conflict with real domains. Other safe choices
+> are `.localhost` and `.local`.
 
-- **make setup-dns** - Adds a custom resolver configuration pointing **.test** to the **dnsmasq** container
-- **make restore-dns** - Removes this custom DNS configuration and restores your system’s default settings
+### FrankenPHP + Laravel Octane
 
-The behavior of these commands depends on your operating system and is determined by the **DNSMASQ_FORWARD_PORT**
-variable, which specifies the DNS port to be used and is read by Docker within the **dnsmasq** container.
+The hybridly container uses [FrankenPHP](https://frankenphp.dev/) as the PHP application server, powered by
+[Laravel Octane](https://laravel.com/docs/octane). FrankenPHP replaces the traditional Nginx + PHP-FPM combination:
 
-#### On macOS:
+- **No FastCGI**: FrankenPHP serves PHP directly (built on Caddy)
+- **Persistent workers**: Octane keeps the application in memory for faster response times
+- **File watching**: The `--watch` flag in development restarts workers on PHP file changes
+- **Production-ready**: The Dockerfile includes a `prod` stage with no dev tools
 
-- Adds a file at **/etc/resolver/test** that directs DNS queries for .test domains to the container's IP, listening on
-  port **53**, since macOS DNS resolver operates only on this port.
-- Uses standard macOS DNS resolver behavior (no systemd needed).
+### Multi-stage Dockerfile
 
-#### On Linux:
+The hybridly Dockerfile has three stages:
 
-- Creates a file at **/etc/systemd/resolved.conf.d/test.conf**
-- Instructs **systemd-resolved** to forward **.test** queries to the container, using port **5353** by default, which
-  avoids conflicts with the system's primary port **53**
-- Restarts the **systemd-resolved** service to apply changes
-
-> [!IMPORTANT]
-> **systemd-resolved** must be active. If it's not running, the script will warn you to start it manually.
-
-### Why not just use /etc/hosts?
-
-Manually editing **/etc/hosts** is tedious and static. This approach:
-
-- Allows dynamic per-project domain routing
-- Avoids cluttering or conflicting with global system config
-- Enables isolated and portable development environments
+| Stage    | Contents                                            | Used By    |
+|----------|-----------------------------------------------------|------------|
+| **base** | FrankenPHP + PHP extensions + Composer              | Both       |
+| **dev**  | base + Xdebug + Node.js + pnpm + supervisor        | Local dev  |
+| **prod** | base only (no Node, no Xdebug, no supervisor)      | Production |
 
 ### RustFS Object Storage
 
@@ -266,8 +252,8 @@ It serves as a drop-in replacement for MinIO, providing local file upload testin
 
 | URL                                    | Purpose                          |
 |----------------------------------------|----------------------------------|
-| **storage.{COMPOSE_PROJECT_NAME}.test** | S3 API endpoint for file access  |
-| **rustfs.{COMPOSE_PROJECT_NAME}.test**  | Web console for bucket management |
+| **storage.{project}.{tld}**           | S3 API endpoint for file access  |
+| **rustfs.{project}.{tld}**            | Web console for bucket management |
 
 #### Automatic Bucket Creation
 
@@ -279,36 +265,3 @@ the stack uses an **init container pattern** with the `rustfs-init` service:
 3. The init container uses the [Chainguard MinIO Client (mc)](https://images.chainguard.dev/directory/image/minio-client/overview)
    to create the bucket defined by `${AWS_BUCKET}` and sets public read access
 4. After completing its tasks, `rustfs-init` exits automatically and does not consume resources
-
-#### Accessing Files
-
-Files stored in buckets with public read access can be accessed directly via:
-
-```
-https://storage.{COMPOSE_PROJECT_NAME}.test/{bucket}/{filename}
-```
-
-For example, with a project named **sassfolding** and a bucket named **media**:
-
-```
-https://storage.sassfolding.test/media/dummy.txt
-```
-
-## Known Issues
-
-While the setup is functional and stable for development, several technical caveats remain:
-
-- **Non-optimized build size**: Some containers could be optimized in terms of size and how volumes are handled
-- **PHP and Node in the same container**: because Hybridly executes Artisan commands via Vite using the
-  [**vite-plugin-run**](https://hybridly.dev/configuration/vite#run), PHP and Node must coexist in the same container.
-  This design violates the separation of concerns
-
-## Acknowledgment
-
-This project was heavily inspired by the amazing work of the [WAYOFDEV](https://github.com/wayofdev) team. Their
-projects provided both technical reference and architectural guidance that made this setup possible:
-
-- [WAYOFDEV - Docker Shared Service](https://github.com/wayofdev/docker-shared-service)
-- [WAYOFDEV - Laravel Starter Tpl](https://github.com/wayofdev/laravel-starter-tpl)
-
-If you’re interested in professional-grade Laravel setups with Docker, be sure to check out their repositories.
