@@ -18,7 +18,7 @@ configure-husky-hooks: ## Dynamically bind Husky hooks to the right Docker conta
 setup-local-environment: ## Set up the local environment from the .env.example file.
 	@echo "$(CYAN)[INFO]: Setting up the local environment...$(RESET)"
 	@if [ ! -f $(PROJECT_DIRECTORY)/.env ]; then cp $(PROJECT_DIRECTORY)/.env.example $(PROJECT_DIRECTORY)/.env; fi
-	@COMPOSE_PROJECT_NAME=$(PROJECT_NAME_SLUG) DNS_DOMAIN=$(DNS_DOMAIN) envsubst < $(PROJECT_DIRECTORY)/.env.example > $(PROJECT_DIRECTORY)/.env
+	@COMPOSE_PROJECT_NAME=$(PROJECT_NAME_SLUG) envsubst < $(PROJECT_DIRECTORY)/.env.example > $(PROJECT_DIRECTORY)/.env
 	@$(SED_IN_PLACE) "s|^COMPOSE_PROJECT_NAME=.*|COMPOSE_PROJECT_NAME=$(PROJECT_NAME_SLUG)|" $(PROJECT_DIRECTORY)/.env
 	@echo "$(GREEN)[SUCCESS]: local environment ready.$(RESET)"
 
@@ -26,5 +26,5 @@ setup-local-environment: ## Set up the local environment from the .env.example f
 setup-testing-environment: ## Set up the testing environment from the .env.testing.example file.
 	@echo "$(CYAN)[INFO]: Setting up the testing environment...$(RESET)"
 	@if [ ! -f $(PROJECT_DIRECTORY)/.env.testing ]; then cp $(PROJECT_DIRECTORY)/.env.testing.example $(PROJECT_DIRECTORY)/.env.testing; fi
-	@COMPOSE_PROJECT_NAME=$(PROJECT_NAME_SLUG) DNS_DOMAIN=$(DNS_DOMAIN) envsubst < $(PROJECT_DIRECTORY)/.env.testing.example > $(PROJECT_DIRECTORY)/.env.testing
+	@COMPOSE_PROJECT_NAME=$(PROJECT_NAME_SLUG) envsubst < $(PROJECT_DIRECTORY)/.env.testing.example > $(PROJECT_DIRECTORY)/.env.testing
 	@echo "$(GREEN)[SUCCESS]: testing environment ready.$(RESET)"

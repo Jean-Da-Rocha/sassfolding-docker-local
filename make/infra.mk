@@ -1,6 +1,6 @@
 .EXPORT_ALL_VARIABLES:
 
-# DNS config
+# DNS config (hardcoded to .test — the only IETF-reserved TLD safe for local development)
 DNS_DOMAIN := test
 DNSMASQ_IP_ADDRESS := 127.0.0.1
 DNSMASQ_FORWARD_PORT ?= $(if $(findstring Darwin,$(UNIX_SHELL_NAME)),53,5354)

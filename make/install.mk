@@ -56,7 +56,7 @@ else ifeq ($(UNIX_SHELL_NAME),Linux)
 	fi
 	@echo "[Resolve]" | sudo tee /etc/systemd/resolved.conf.d/$(DNS_DOMAIN).conf > /dev/null
 	@echo "DNS=$(DNSMASQ_IP_ADDRESS):$(DNSMASQ_FORWARD_PORT)" | sudo tee -a /etc/systemd/resolved.conf.d/$(DNS_DOMAIN).conf > /dev/null
-	@echo "Domains=$(DNS_DOMAIN)" | sudo tee -a /etc/systemd/resolved.conf.d/$(DNS_DOMAIN).conf > /dev/null
+	@echo "Domains=~$(DNS_DOMAIN)" | sudo tee -a /etc/systemd/resolved.conf.d/$(DNS_DOMAIN).conf > /dev/null
 	@if systemctl is-active --quiet systemd-resolved; then \
 		sudo systemctl restart systemd-resolved; \
 		echo "$(GREEN)[SUCCESS]: systemd-resolved DNS config added for *.$(DNS_DOMAIN)$(RESET)"; \

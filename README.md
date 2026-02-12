@@ -30,9 +30,9 @@ project, and a wide array of pre-configured services to boost development produc
 
 ## Features
 
-- Fully configurable via Makefile variables (versions, ports, project name, TLD, etc.)
+- Fully configurable via Makefile variables (versions, ports, project name, etc.)
 - Unique container, volume, and network names per project (COMPOSE_PROJECT_NAME)
-- Configurable TLD for local domains (default: `.test`, customizable via `DNS_DOMAIN`)
+- Uses `.test` TLD for local domains (IETF-reserved, RFC 6761 — guaranteed to never conflict with real domains)
 - Built-in SSL certificates via mkcert
 - FrankenPHP + Laravel Octane for high-performance PHP serving
 - Multi-stage Dockerfile (dev target ready, prod target scaffolded)
@@ -88,7 +88,7 @@ slugified version of your working directory. For example, with a working directo
 > **COMPOSE_PROJECT_NAME** throughout the project.
 
 To experiment with versions, ports, or other configurations, override these values at the top of your Makefile (in the
-Sassfolding project). For example, to use a different PHP version or TLD:
+Sassfolding project). For example, to use a different PHP version:
 
 ```makefile
 # Empty by default. Set a value if you don't want to use the working directory as project name.
@@ -104,7 +104,6 @@ export OVERRIDE_PROJECT_NAME
 
 # Variables to override
 PHP_VERSION := 8.4
-DNS_DOMAIN := test
 
 include $(DOCKER_DIRECTORY)/make/main.mk
 ```
@@ -203,7 +202,9 @@ means any subdomain (existing or future) automatically resolves to `127.0.0.1` w
 
 The `make setup-dns` target configures your OS to forward queries for the configured TLD to the dnsmasq container:
 
-- **Linux**: Creates a systemd-resolved drop-in config at `/etc/systemd/resolved.conf.d/{tld}.conf`
+- **Linux**: Creates a systemd-resolved drop-in config at `/etc/systemd/resolved.conf.d/{tld}.conf` using a routing
+  domain (`~{tld}`) so that only queries for the configured TLD are forwarded to dnsmasq — all other DNS traffic
+  uses your system's default resolver
 - **macOS**: Creates a resolver file at `/etc/resolver/{tld}`
 
 The `make restore-dns` target removes these configurations. Both targets require `sudo` (prompted once during setup).
@@ -213,8 +214,8 @@ The `make restore-dns` target removes these configurations. Both targets require
 The dnsmasq container is configured entirely through **inline CLI arguments** in `docker-compose.yml`, with no external
 config file. This approach was chosen over the traditional mounted `dnsmasq.conf` for several reasons:
 
-- **Dynamic TLD**: The `--address=/${DNS_DOMAIN}/127.0.0.1` flag uses Docker Compose variable substitution, so the TLD
-  is always in sync with `DNS_DOMAIN` — no config file to regenerate when changing TLD
+- **Variable-driven**: The `--address=/${DNS_DOMAIN}/127.0.0.1` flag uses Docker Compose variable substitution, so the
+  TLD is defined once in `make/infra.mk` and referenced everywhere — no duplication
 - **Entrypoint bypass**: The `dockurr/dnsmasq` image ships with a wrapper script; the setup overrides it with
   `entrypoint: ["dnsmasq"]` to call the binary directly and keep full control over flags
 - **Container isolation**: `--no-resolv` prevents dnsmasq from reading the container's `/etc/resolv.conf`, and
@@ -223,21 +224,6 @@ config file. This approach was chosen over the traditional mounted `dnsmasq.conf
   `make logs svc=dnsmasq`
 - **Direct healthcheck**: Uses `nslookup healthcheck.${DNS_DOMAIN} 127.0.0.1` to query dnsmasq directly, independent
   of the host's DNS resolution
-
-### Custom TLD
-
-The TLD is configurable via the `DNS_DOMAIN` variable in `make/infra.mk` (default: `test`). Override it in your
-Makefile to use a different TLD:
-
-```makefile
-DNS_DOMAIN := localhost
-```
-
-This will generate URLs like `app.sassfolding.localhost`, certificates for `*.sassfolding.localhost`, etc.
-
-> [!TIP]
-> `.test` is an IETF-reserved TLD (RFC 6761) that will never conflict with real domains. Other safe choices
-> are `.localhost` and `.local`.
 
 ### FrankenPHP + Laravel Octane
 
