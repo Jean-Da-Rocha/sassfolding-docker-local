@@ -11,12 +11,13 @@ ARG USER_NAME
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         git \
+        libicu-dev \
         libonig-dev \
         libpng-dev \
         libxml2-dev \
         libzip-dev \
         unzip \
-    && docker-php-ext-install -j$(nproc) bcmath gd mbstring pcntl pdo_mysql zip \
+    && docker-php-ext-install -j$(nproc) bcmath gd intl mbstring pcntl pdo_mysql zip \
     && pecl install redis \
     && docker-php-ext-enable redis \
     && curl -sS https://getcomposer.org/installer | php -- \

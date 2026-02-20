@@ -197,15 +197,15 @@ make seed module=Users class=UserSeeder
 
 ### DNS Resolution
 
-The stack uses a **dnsmasq** container to provide wildcard DNS resolution for all `*.{project}.{tld}` domains. This
+The stack uses a **dnsmasq** container to provide wildcard DNS resolution for all `*.{project}.test` domains. This
 means any subdomain (existing or future) automatically resolves to `127.0.0.1` without maintaining a list of entries.
 
 The `make setup-dns` target configures your OS to forward queries for the configured TLD to the dnsmasq container:
 
-- **Linux**: Creates a systemd-resolved drop-in config at `/etc/systemd/resolved.conf.d/{tld}.conf` using a routing
-  domain (`~{tld}`) so that only queries for the configured TLD are forwarded to dnsmasq — all other DNS traffic
+- **Linux**: Creates a systemd-resolved drop-in config at `/etc/systemd/resolved.conf.d/test.conf` using a routing
+  domain (`~test`) so that only queries for the configured TLD are forwarded to dnsmasq — all other DNS traffic
   uses your system's default resolver
-- **macOS**: Creates a resolver file at `/etc/resolver/{tld}`
+- **macOS**: Creates a resolver file at `/etc/resolver/test`
 
 The `make restore-dns` target removes these configurations. Both targets require `sudo` (prompted once during setup).
 
@@ -255,8 +255,8 @@ It serves as a drop-in replacement for MinIO, providing local file upload testin
 
 | URL                                    | Purpose                          |
 |----------------------------------------|----------------------------------|
-| **storage.{project}.{tld}**           | S3 API endpoint for file access  |
-| **rustfs.{project}.{tld}**            | Web console for bucket management |
+| **storage.{project}.test**           | S3 API endpoint for file access  |
+| **rustfs.{project}.test**            | Web console for bucket management |
 
 #### Automatic Bucket Creation
 
