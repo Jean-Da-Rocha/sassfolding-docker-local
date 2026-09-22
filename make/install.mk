@@ -42,6 +42,9 @@ else
 	@exit 1
 endif
 
+# The dummy interface needs a regular private address: systemd-resolved treats a link carrying
+# only a link-local address as irrelevant and gives it no DNS scope, so the routing domain below
+# would never be used.
 .PHONY: setup-dns-networkmanager
 setup-dns-networkmanager: ## Route *.test to dnsmasq through a dedicated NetworkManager profile.
 	@echo "$(CYAN)[INFO]: Setting up DNS for *.$(DNS_DOMAIN) through NetworkManager...$(RESET)"
@@ -53,7 +56,7 @@ setup-dns-networkmanager: ## Route *.test to dnsmasq through a dedicated Network
 			con-name $(NM_CONNECTION_NAME) \
 			connection.autoconnect yes \
 			ipv4.method manual \
-			ipv4.addresses 169.254.53.1/32 \
+			ipv4.addresses 10.53.53.1/32 \
 			ipv4.dns $(DNSMASQ_IP_ADDRESS) \
 			ipv4.dns-search '~$(DNS_DOMAIN)' \
 			ipv4.never-default yes \

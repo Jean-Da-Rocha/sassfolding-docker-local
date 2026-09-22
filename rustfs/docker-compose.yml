@@ -12,6 +12,7 @@ services:
     image: rustfs/rustfs:${RUSTFS_VERSION}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=${SHARED_NETWORK_NAME}"
       # RustFS Api / Storage
       - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.entrypoints=https"
       - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.rule=Host(`storage.${COMPOSE_PROJECT_NAME}.${DNS_DOMAIN}`)"

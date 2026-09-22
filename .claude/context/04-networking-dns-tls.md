@@ -21,7 +21,9 @@ real domain. Do not make it configurable.
 - **macOS**: a resolver file under `/etc/resolver/`. macOS resolves per domain by design, so it
   never conflicts with anything else.
 - **Linux with NetworkManager**: a dedicated profile carried by a dummy interface, holding the
-  dnsmasq address and a routing domain for the TLD. A routing domain attached to a link is more
+  dnsmasq address and a routing domain for the TLD. That interface must carry a regular private
+  address: systemd-resolved treats a link holding only a link-local address as irrelevant, gives
+  it no DNS scope, and the routing domain is then never used. A routing domain attached to a link is more
   specific than a global one, which is how VPNs route their own domains, so it always wins. The
   profile survives reboots on its own, with no systemd unit.
 - **Linux without NetworkManager**: a systemd-resolved drop-in holding the same server and routing

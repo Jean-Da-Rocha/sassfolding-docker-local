@@ -29,6 +29,14 @@ Statements of fact. This is a local development setup and is assumed to be one.
 - Three ports remain published per project. Two projects at once means overriding them.
 - `make purge` prunes the whole machine.
 
+## Traefik and multiple networks
+
+Every routed container sits on two networks, its own project network and the shared one. The
+Docker provider picks one of them with no guarantee, and silently times out with a gateway error
+whenever it lands on the project network, which Traefik is not attached to. Every routed service
+therefore carries a `traefik.docker.network` label. **A new routed service without that label
+works intermittently**, which is worse than failing outright.
+
 ## Performance
 
 - Xdebug is set to start on every request, including Vite's. First thing to check when the
