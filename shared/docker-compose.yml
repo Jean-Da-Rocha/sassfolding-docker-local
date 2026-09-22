@@ -1,0 +1,11 @@
+# Traefik reads the Docker socket, so a single instance already sees the containers of
+# every project. dnsmasq answers the same thing for every project. Running one of each
+# per project only duplicates them and makes them fight over ports 80, 443 and 53.
+
+include:
+  - ${DOCKER_DIRECTORY}/dnsmasq/docker-compose.yml
+  - ${DOCKER_DIRECTORY}/traefik/docker-compose.yml
+
+networks:
+  shared:
+    name: ${SHARED_NETWORK_NAME}

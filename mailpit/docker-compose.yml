@@ -10,8 +10,14 @@ services:
       - "traefik.http.services.mail-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8025"
     networks:
       - laravel
+      - shared
     volumes:
       - mail-data:/data
+
+networks:
+  shared:
+    external: true
+    name: ${SHARED_NETWORK_NAME}
 
 volumes:
   mail-data:

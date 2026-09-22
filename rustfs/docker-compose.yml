@@ -26,6 +26,7 @@ services:
       - "traefik.http.services.rustfs-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=9001"
     networks:
       - laravel
+      - shared
     user: "10001:10001"
     volumes:
       - rustfs-data:/data
@@ -55,6 +56,11 @@ services:
     networks:
       - laravel
     restart: "no"
+
+networks:
+  shared:
+    external: true
+    name: ${SHARED_NETWORK_NAME}
 
 volumes:
   rustfs-data:
