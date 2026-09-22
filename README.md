@@ -32,6 +32,7 @@ project, and a wide array of pre-configured services to boost development produc
 
 - Fully configurable via Makefile variables (versions, ports, project name, etc.)
 - Unique container, volume, and network names per project (COMPOSE_PROJECT_NAME)
+- Shared Traefik and dnsmasq, so several projects can run side by side
 - Uses `.test` TLD for local domains (IETF-reserved, RFC 6761 — guaranteed to never conflict with real domains)
 - Built-in SSL certificates via mkcert
 - FrankenPHP + Laravel Octane for high-performance PHP serving
@@ -40,22 +41,42 @@ project, and a wide array of pre-configured services to boost development produc
 
 ## Architecture
 
+Containers come in two groups. The shared ones are started once per machine and serve every
+project; the others are created per project and carry the `COMPOSE_PROJECT_NAME` prefix.
+
+### Shared infrastructure (`shared/docker-compose.yml`)
+
 | Container       | Purpose                                                     |
 |-----------------|-------------------------------------------------------------|
+| **Traefik**     | Dynamic reverse proxy with TLS termination and dashboard    |
 | **dnsmasq**     | Lightweight DNS server for wildcard local domain resolution |
+
+Traefik reads the Docker socket, so a single instance already sees the containers of every
+project. dnsmasq answers the same thing for every project. Running one of each per project
+only duplicates them and makes them fight over ports 80, 443 and 53.
+
+They are started by `make shared-start`, which `make start` runs on its own, and they stay up
+when a project is stopped so that the other projects keep working.
+
+### Per project
+
+| Container       | Purpose                                                     |
+|-----------------|-------------------------------------------------------------|
 | **Hybridly**    | FrankenPHP + Octane + Node.js (PHP server + Vite dev)       |
 | **Mailpit**     | Local SMTP server and email inbox for testing emails        |
 | **MySQL**       | Relational database for both local development and testing  |
 | **Redis**       | Used for queues, cache, and sessions                        |
 | **RustFS**      | S3-compatible object storage (for local file upload testing)|
 | **RustFS-init** | Init container for automatic bucket creation (exits after)  |
-| **Traefik**     | Dynamic reverse proxy with TLS termination and dashboard    |
 
 ### Request Flow
 
 ```
 Browser -> Traefik (TLS on :443) -> FrankenPHP/Octane (:8000) -> Laravel
 ```
+
+Every project joins a shared `localdev` network alongside its own `project.{name}` network, so
+that the shared Traefik can reach the containers it routes to.
 
 ## Usage
 
@@ -121,21 +142,37 @@ own (defaults to help).
 
 ### Docker Lifecycle
 
-| Command                       | Description                                                     |
-|-------------------------------|-----------------------------------------------------------------|
-| `make start`                  | Start all containers in detached mode                           |
-| `make stop`                   | Stop all containers                                             |
-| `make stop keep-volumes=0`    | Stop all containers and remove volumes                          |
-| `make restart`                | Stop and start all containers                                   |
-| `make build`                  | Build all Docker images                                         |
-| `make build keep-cache=0`     | Build without Docker cache                                      |
-| `make rebuild`                | Stop, restore DNS, build, setup DNS, start                      |
-| `make destroy`                | Tear down project: containers, volumes, and images               |
-| `make purge`                  | Prune ALL unused Docker resources system-wide (with confirmation)|
-| `make logs`                   | Tail logs from all containers                                   |
-| `make logs svc=hybridly`      | Tail logs from a specific container                             |
-| `make ps`                     | Show status of all containers                                   |
-| `make shell`                  | Open a bash shell in the hybridly container                     |
+| Command                  | Description                                                      |
+|--------------------------|------------------------------------------------------------------|
+| `make start`             | Start the shared infrastructure, then the project containers     |
+| `make stop`              | Stop the project containers, keeping their data volumes          |
+| `make reset`             | Stop the project containers and delete their data volumes        |
+| `make restart`           | Stop and start the project containers                            |
+| `make build`             | Build the project images                                         |
+| `make build-clean`       | Build the project images, ignoring the Docker layer cache        |
+| `make rebuild`           | Stop, build, start                                               |
+| `make rebuild-clean`     | Reset, build without cache, start                                |
+| `make destroy`           | Tear down project: containers, volumes, and images               |
+| `make purge`             | Prune ALL unused Docker resources system-wide (with confirmation)|
+| `make logs`              | Tail logs from all project containers                            |
+| `make logs svc=hybridly` | Tail logs from a specific container                              |
+| `make ps`                | Show status of the project containers                            |
+| `make shell`             | Open a bash shell in the hybridly container                      |
+
+> [!NOTE]
+> There is no double-negative flag any more. `make stop` always keeps your data, `make reset`
+> always deletes it, and `build-clean` always ignores the cache.
+
+### Shared Infrastructure
+
+| Command                     | Description                                                  |
+|-----------------------------|--------------------------------------------------------------|
+| `make shared-start`         | Start Traefik and dnsmasq (run automatically by `make start`) |
+| `make shared-stop`          | Stop them. **Every project becomes unreachable**              |
+| `make shared-restart`       | Restart them                                                  |
+| `make shared-ps`            | Show their status                                             |
+| `make shared-logs`          | Tail their logs                                               |
+| `make shared-logs svc=traefik` | Tail the logs of one of them                               |
 
 ### Backend (Laravel / PHP)
 
@@ -171,10 +208,10 @@ make seed module=Users class=UserSeeder
 | `make eslint`                  | Run ESLint with auto-fix                                     |
 | `make vue-tsc`                 | Run TypeScript type checking                                 |
 | `make pnpm cmd="..."`         | Run any pnpm command                                         |
-| `make taze`                    | Check for outdated minor dependencies                        |
-| `make taze major=1`            | Check for outdated major dependencies                        |
-| `make taze-write`              | Write minor updates to package.json and install              |
-| `make taze-write major=1`      | Write major updates to package.json and install              |
+| `make taze`                    | Check for outdated minor and patch dependencies              |
+| `make taze-major`              | Check for outdated dependencies, including majors            |
+| `make taze-write`              | Write minor and patch updates to package.json and install    |
+| `make taze-write-major`        | Write updates including majors to package.json and install   |
 
 ### Installation & DNS
 
@@ -191,23 +228,66 @@ make seed module=Users class=UserSeeder
 | `make setup-local-environment`   | Generate .env from .env.example                       |
 | `make setup-testing-environment` | Generate .env.testing from .env.testing.example       |
 | `make configure-husky-hooks`     | Bind Husky hooks to the right Docker container        |
-| `make update-certificates`       | Generate SSL certificates for project domains         |
+| `make update-certificates`       | Generate SSL certificates and refresh the Traefik list |
+| `make generate-certificate name=<name>` | Generate one wildcard certificate              |
+| `make list-certificates`         | Rebuild the Traefik file listing every certificate    |
 
 ## Advanced topics
+
+### Running several projects at the same time
+
+Traefik and dnsmasq are shared, so ports 80, 443 and 53 are bound once for the whole machine and
+never collide. Certificates are listed in a file regenerated by `make update-certificates`, which
+Traefik watches, so a new project is picked up without restarting anything.
+
+Three ports are still published per project, because they are only useful to tools running on your
+host: MySQL, Redis and the Vite dev server. To run a second project at the same time, override them
+in **its** Makefile, above the `include` line:
+
+```makefile
+DB_FORWARD_PORT := 3307
+REDIS_FORWARD_PORT := 6380
+VITE_PORT := 5174
+
+include $(DOCKER_DIRECTORY)/make/main.mk
+```
+
+The application URLs are unaffected: they all go through the shared Traefik on 443.
+
 
 ### DNS Resolution
 
 The stack uses a **dnsmasq** container to provide wildcard DNS resolution for all `*.{project}.test` domains. This
 means any subdomain (existing or future) automatically resolves to `127.0.0.1` without maintaining a list of entries.
 
-The `make setup-dns` target configures your OS to forward queries for the configured TLD to the dnsmasq container:
+The `make setup-dns` target configures your OS to forward queries for the configured TLD to the dnsmasq
+container. It picks the mechanism that fits your system:
 
-- **Linux**: Creates a systemd-resolved drop-in config at `/etc/systemd/resolved.conf.d/test.conf` using a routing
-  domain (`~test`) so that only queries for the configured TLD are forwarded to dnsmasq — all other DNS traffic
-  uses your system's default resolver
-- **macOS**: Creates a resolver file at `/etc/resolver/test`
+- **macOS**: creates a resolver file at `/etc/resolver/test`. macOS resolves per domain by design, so this
+  never interferes with the rest of your DNS configuration.
+- **Linux with NetworkManager** (most desktop distributions): creates a dedicated NetworkManager profile
+  named `test-dns`, carried by a dummy `test0` interface, holding `ipv4.dns 127.0.0.1` and the routing
+  domain `ipv4.dns-search ~test`. A routing domain attached to a link wins over a global one, which is how
+  Tailscale and corporate VPNs route their own domains. The profile persists across reboots on its own.
+- **Linux without NetworkManager**: falls back to a systemd-resolved drop-in at
+  `/etc/systemd/resolved.conf.d/test.conf`, holding the same server and routing domain in the global scope.
 
-The `make restore-dns` target removes these configurations. Both targets require `sudo` (prompted once during setup).
+The `make restore-dns` target removes whichever of these is present. Both targets require `sudo`, prompted
+once during setup.
+
+#### Conflicting global DNS configuration
+
+systemd-resolved does not bind a given server to a given domain inside its **global** scope: every global
+server is a candidate for every global routing domain. So if another drop-in already declares a global
+resolver with `Domains=~.` (a pinned Cloudflare or Quad9 setup, a Pi-hole, a corporate resolver), the
+drop-in written by `make setup-dns` accumulates with it instead of taking precedence, and `*.test` queries
+can be answered by that resolver with NXDOMAIN.
+
+This is why the NetworkManager profile is preferred when it is available: a routing domain attached to a
+link is more specific than a global one, so it always wins, and your existing configuration is left alone.
+
+If you are on Linux without NetworkManager and hit this case, `make setup-dns` prints a warning. Either
+install NetworkManager, or move your own resolver out of the global scope and onto your network interface.
 
 #### dnsmasq Design Choices
 
@@ -216,6 +296,9 @@ config file. This approach was chosen over the traditional mounted `dnsmasq.conf
 
 - **Variable-driven**: The `--address=/${DNS_DOMAIN}/127.0.0.1` flag uses Docker Compose variable substitution, so the
   TLD is defined once in `make/infra.mk` and referenced everywhere — no duplication
+- **Bound to loopback**: the container publishes `127.0.0.1:53` and nothing else. Published on `0.0.0.0` this
+  would be an open resolver forwarding to 1.1.1.1 for your whole local network. Port 53 is free on `127.0.0.1`
+  even on systems running systemd-resolved, whose stub listeners sit on `127.0.0.53` and `127.0.0.54`
 - **Entrypoint bypass**: The `dockurr/dnsmasq` image ships with a wrapper script; the setup overrides it with
   `entrypoint: ["dnsmasq"]` to call the binary directly and keep full control over flags
 - **Container isolation**: `--no-resolv` prevents dnsmasq from reading the container's `/etc/resolv.conf`, and
