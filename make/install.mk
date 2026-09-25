@@ -42,9 +42,8 @@ else
 	@exit 1
 endif
 
-# The dummy interface needs a regular private address: systemd-resolved treats a link carrying
-# only a link-local address as irrelevant and gives it no DNS scope, so the routing domain below
-# would never be used.
+# The dummy interface needs a regular private address: systemd-resolved gives a link carrying
+# only a link-local one no DNS scope, and the routing domain below is then never used.
 .PHONY: setup-dns-networkmanager
 setup-dns-networkmanager: ## Route *.test to dnsmasq through a dedicated NetworkManager profile.
 	@echo "$(CYAN)[INFO]: Setting up DNS for *.$(DNS_DOMAIN) through NetworkManager...$(RESET)"

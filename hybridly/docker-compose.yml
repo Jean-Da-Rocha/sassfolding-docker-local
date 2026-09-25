@@ -18,9 +18,8 @@ services:
     environment:
       COREPACK_ENABLE_DOWNLOAD_PROMPT: ${COREPACK_ENABLE_DOWNLOAD_PROMPT:-0}
       PHP_IDE_CONFIG: serverName=${COMPOSE_PROJECT_NAME}
-    # The application talks to the S3 API through its public URL, which resolves to
-    # 127.0.0.1 on the host. Inside a container that would be the container itself, so
-    # these names are pointed at the host gateway, where the shared Traefik listens.
+    # The public URLs resolve to 127.0.0.1, which inside a container is the container itself,
+    # so they are pointed at the host gateway where the shared Traefik listens.
     extra_hosts:
       - host.docker.internal:host-gateway
       - app.${COMPOSE_PROJECT_NAME}.${DNS_DOMAIN}:host-gateway

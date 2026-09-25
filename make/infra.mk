@@ -5,7 +5,6 @@ DNS_DOMAIN := test
 DNSMASQ_IP_ADDRESS := 127.0.0.1
 DNSMASQ_FORWARD_PORT ?= 53
 
-# Shared infrastructure, started once and reused by every project on this machine.
 SHARED_PROJECT_NAME ?= localdev
 SHARED_NETWORK_NAME ?= localdev
 
@@ -15,10 +14,8 @@ GROUP_NAME ?= laravel
 UID ?= 1000
 USER_NAME ?= laravel
 
-# Ports published on the host.
-# HTTP and HTTPS belong to the shared Traefik, so they never collide between projects.
-# The three below are published per project: override them in your Makefile to run
-# several projects at the same time.
+# HTTP and HTTPS belong to the shared Traefik and never collide. The other three are published
+# per project: override them in your Makefile to run several projects at the same time.
 DB_FORWARD_PORT ?= 3306
 HTTP_FORWARD_PORT ?= 80
 HTTPS_FORWARD_PORT ?= 443

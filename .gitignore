@@ -7,5 +7,4 @@ traefik/certs/*.cert
 traefik/certs/*.crt
 traefik/certs/*.key
 hybridly/ssl/*.pem
-# Claude context lives outside the repository, in the project memory space.
 .claude/context/
