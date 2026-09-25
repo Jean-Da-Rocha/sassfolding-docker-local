@@ -12,6 +12,7 @@ services:
     image: rustfs/rustfs:${RUSTFS_VERSION}
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=${SHARED_NETWORK_NAME}"
       # RustFS Api / Storage
       - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.entrypoints=https"
       - "traefik.http.routers.storage-${COMPOSE_PROJECT_NAME}.rule=Host(`storage.${COMPOSE_PROJECT_NAME}.${DNS_DOMAIN}`)"
@@ -26,6 +27,7 @@ services:
       - "traefik.http.services.rustfs-${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=9001"
     networks:
       - laravel
+      - shared
     user: "10001:10001"
     volumes:
       - rustfs-data:/data
@@ -55,6 +57,11 @@ services:
     networks:
       - laravel
     restart: "no"
+
+networks:
+  shared:
+    external: true
+    name: ${SHARED_NETWORK_NAME}
 
 volumes:
   rustfs-data:

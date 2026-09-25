@@ -1,6 +1,5 @@
 api:
   dashboard: true
-  insecure: true
 
 entryPoints:
   http:
@@ -12,6 +11,8 @@ entryPoints:
           to: https
   https:
     address: ":443"
+  ping:
+    address: ":8082"
 
 global:
   sendAnonymousUsage: false
@@ -21,16 +22,11 @@ log:
   level: info
 
 ping:
-  entryPoint: traefik
+  entryPoint: ping
 
 providers:
   docker:
     exposedByDefault: false
   file:
-    directory: /etc/traefik
+    directory: /etc/traefik/dynamic
     watch: true
-
-tls:
-  certificates:
-    - certFile: /etc/traefik/certs/{{ env "COMPOSE_PROJECT_NAME" }}.cert
-      keyFile: /etc/traefik/certs/{{ env "COMPOSE_PROJECT_NAME" }}.key

@@ -24,6 +24,7 @@ DOCKER ?= @docker
 DOCKER_COMPOSE ?= $(DOCKER) compose
 HYBRIDLY_EXEC ?= $(DOCKER_COMPOSE) exec -it hybridly
 HYBRIDLY_RUNNER ?= $(DOCKER_COMPOSE) run --rm --no-deps hybridly
+SHARED_COMPOSE ?= $(DOCKER_COMPOSE) --project-name $(SHARED_PROJECT_NAME) --file $(DOCKER_DIRECTORY)/shared/docker-compose.yml
 
 MAKE_DIRECTORY := $(dir $(lastword $(MAKEFILE_LIST)))
 
@@ -34,6 +35,7 @@ include $(MAKE_DIRECTORY)/environment.mk
 include $(MAKE_DIRECTORY)/frontend.mk
 include $(MAKE_DIRECTORY)/infra.mk
 include $(MAKE_DIRECTORY)/install.mk
+include $(MAKE_DIRECTORY)/shared.mk
 
 .DEFAULT_GOAL := help
 

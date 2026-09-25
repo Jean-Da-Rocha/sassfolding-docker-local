@@ -1,0 +1,7 @@
+include:
+  - ${DOCKER_DIRECTORY}/dnsmasq/docker-compose.yml
+  - ${DOCKER_DIRECTORY}/traefik/docker-compose.yml
+
+networks:
+  shared:
+    name: ${SHARED_NETWORK_NAME}

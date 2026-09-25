@@ -2,7 +2,7 @@ services:
   dnsmasq:
     cap_add:
       - NET_ADMIN
-    container_name: ${COMPOSE_PROJECT_NAME}-dnsmasq
+    container_name: ${SHARED_PROJECT_NAME}-dnsmasq
     entrypoint: ["dnsmasq"]
     command:
       - --no-daemon
@@ -19,7 +19,10 @@ services:
       timeout: 3s
     image: dockurr/dnsmasq:${DNSMASQ_VERSION}
     networks:
-      - laravel
+      - shared
+    # Bound to the loopback interface on purpose: published on 0.0.0.0 this would be an
+    # open resolver forwarding to 1.1.1.1 for the whole local network.
     ports:
-      - "${DNSMASQ_FORWARD_PORT}:53/udp"
-      - "${DNSMASQ_FORWARD_PORT}:53/tcp"
+      - "${DNSMASQ_IP_ADDRESS}:${DNSMASQ_FORWARD_PORT}:53/udp"
+      - "${DNSMASQ_IP_ADDRESS}:${DNSMASQ_FORWARD_PORT}:53/tcp"
+    restart: unless-stopped

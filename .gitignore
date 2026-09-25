@@ -7,3 +7,5 @@ traefik/certs/*.cert
 traefik/certs/*.crt
 traefik/certs/*.key
 hybridly/ssl/*.pem
+.claude/context/
+traefik/config/dynamic/*.yml
