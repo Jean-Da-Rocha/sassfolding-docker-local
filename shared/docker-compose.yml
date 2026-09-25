@@ -1,6 +1,3 @@
-# Traefik reads the Docker socket and already sees every project's containers, and dnsmasq
-# answers the same for all of them. One per project would only fight over ports 80, 443 and 53.
-
 include:
   - ${DOCKER_DIRECTORY}/dnsmasq/docker-compose.yml
   - ${DOCKER_DIRECTORY}/traefik/docker-compose.yml

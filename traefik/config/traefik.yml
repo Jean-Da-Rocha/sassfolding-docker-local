@@ -1,5 +1,3 @@
-# The dashboard is served through a regular router (see the compose labels) instead of
-# the insecure API listener, so nothing but the two entry points below is reachable.
 api:
   dashboard: true
 
@@ -13,7 +11,6 @@ entryPoints:
           to: https
   https:
     address: ":443"
-  # Internal only, never published on the host. Used by the container healthcheck.
   ping:
     address: ":8082"
 
@@ -30,8 +27,6 @@ ping:
 providers:
   docker:
     exposedByDefault: false
-  # A single Traefik serves every project, so the certificate list is regenerated
-  # into this directory by 'make update-certificates'.
   file:
     directory: /etc/traefik/dynamic
     watch: true
