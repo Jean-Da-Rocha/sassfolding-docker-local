@@ -33,7 +33,7 @@ project, and a wide array of pre-configured services to boost development produc
 - Fully configurable via Makefile variables (versions, ports, project name, etc.)
 - Unique container, volume, and network names per project (COMPOSE_PROJECT_NAME)
 - Shared Traefik and dnsmasq, so several projects can run side by side
-- Uses `.test` TLD for local domains (IETF-reserved, RFC 6761 — guaranteed to never conflict with real domains)
+- Uses `.test` TLD for local domains (IETF-reserved, RFC 6761, guaranteed to never conflict with real domains)
 - Built-in SSL certificates via mkcert
 - FrankenPHP + Laravel Octane for high-performance PHP serving
 - Multi-stage Dockerfile (dev target ready, prod target scaffolded)
@@ -295,14 +295,14 @@ The dnsmasq container is configured entirely through **inline CLI arguments** in
 config file. This approach was chosen over the traditional mounted `dnsmasq.conf` for several reasons:
 
 - **Variable-driven**: The `--address=/${DNS_DOMAIN}/127.0.0.1` flag uses Docker Compose variable substitution, so the
-  TLD is defined once in `make/infra.mk` and referenced everywhere — no duplication
+  TLD is defined once in `make/infra.mk` and referenced everywhere, no duplication
 - **Bound to loopback**: the container publishes `127.0.0.1:53` and nothing else. Published on `0.0.0.0` this
   would be an open resolver forwarding to 1.1.1.1 for your whole local network. Port 53 is free on `127.0.0.1`
   even on systems running systemd-resolved, whose stub listeners sit on `127.0.0.53` and `127.0.0.54`
 - **Entrypoint bypass**: The `dockurr/dnsmasq` image ships with a wrapper script; the setup overrides it with
   `entrypoint: ["dnsmasq"]` to call the binary directly and keep full control over flags
 - **Container isolation**: `--no-resolv` prevents dnsmasq from reading the container's `/etc/resolv.conf`, and
-  `--no-hosts` prevents it from reading `/etc/hosts` — dnsmasq only resolves what it's told to via `--address`
+  `--no-hosts` prevents it from reading `/etc/hosts`. dnsmasq only resolves what it's told to via `--address`
 - **Docker-friendly logging**: `--log-facility=-` sends logs to stderr, making them visible via `docker logs` or
   `make logs svc=dnsmasq`
 - **Direct healthcheck**: Uses `nslookup healthcheck.${DNS_DOMAIN} 127.0.0.1` to query dnsmasq directly, independent

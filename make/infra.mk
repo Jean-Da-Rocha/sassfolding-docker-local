@@ -1,6 +1,6 @@
 .EXPORT_ALL_VARIABLES:
 
-# DNS config (hardcoded to .test — the only IETF-reserved TLD safe for local development)
+# DNS config (hardcoded to .test, the only IETF-reserved TLD safe for local development)
 DNS_DOMAIN := test
 DNSMASQ_IP_ADDRESS := 127.0.0.1
 DNSMASQ_FORWARD_PORT ?= 53
