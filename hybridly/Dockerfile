@@ -1,4 +1,4 @@
-ARG PHP_VERSION=8.5
+ARG PHP_VERSION=8.5.12
 
 FROM dunglas/frankenphp:php${PHP_VERSION} AS base
 
